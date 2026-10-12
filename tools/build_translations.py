@@ -26,7 +26,6 @@ for language in LANGUAGES:
     assert not missing, f'{language}: missing {[(KEYS.index(key), key) for key in missing]}'
     for key, value in dictionary.items():
         assert set(re.findall(r'\{\w+\}', key)) == set(re.findall(r'\{\w+\}', value)), f'{language}: placeholders in {key}'
-    (ROOT / f'locales/{language}.json').write_text(json.dumps(dictionary, ensure_ascii=False, indent=2), encoding='utf-8')
     dictionaries[language] = dictionary
     print(f'{language}: {len(dictionary)} translations validated')
 (ROOT / 'translations.js').write_text(

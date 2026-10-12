@@ -1,0 +1,20 @@
+# Python and local environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local browser checks and temporary previews
+.browser-*/
+.language-preview.html
+language-preview.png
+*.tmp
+*.log
+
+# Local secrets and operating system files
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+Desktop.ini
