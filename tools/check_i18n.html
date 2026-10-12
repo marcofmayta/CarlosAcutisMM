@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Language checks</title></head>
+<body><pre id="results">RUNNING</pre><iframe id="page" src="../index.html?lang=ja" width="390" height="844"></iframe>
+<script>
+const results = document.getElementById('results');
+const frame = document.getElementById('page');
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+const check = (value, label) => { if (!value) throw Error(label); };
+frame.addEventListener('load', async () => {
+  try {
+    const w = frame.contentWindow, d = frame.contentDocument;
+    check(w.siteI18n, 'Translation controller loaded');
+    check(d.documentElement.lang === 'ja', 'Initial language from URL');
+    check(d.querySelectorAll('#photoDots button').length === 13, 'Carousel initialized');
+    await wait(3000);
+    const messages = [];
+    d.querySelector('.q').click();
+    d.querySelector('#photoPlay').click();
+    const paused = d.querySelector('#photoPlay').getAttribute('aria-pressed');
+    for (const lang of ['en', 'pt', 'fr', 'it', 'de', 'ja', 'ko', 'es']) {
+      d.querySelector(`[data-language="${lang}"]`).click();
+      await wait(100);
+      const t = w.siteI18n.t;
+      check(d.documentElement.lang === (lang === 'pt' ? 'pt-BR' : lang), lang + ': document language');
+      check(d.querySelector('.hero-lead').textContent === t(w.ACUTIS_TRANSLATIONS.es[Object.keys(w.ACUTIS_TRANSLATIONS.es)[15]]), lang + ': hero translated');
+      check(d.title === t(Object.keys(w.ACUTIS_TRANSLATIONS.es)[0]), lang + ': document title');
+      check(d.querySelector('#statement').textContent === t(Object.keys(w.ACUTIS_TRANSLATIONS.es)[21]), lang + ': animated statement');
+      check(d.querySelectorAll('#statement .w').length > 5, lang + ': statement segmentation');
+      check(d.querySelector('.photo-slide figcaption').textContent === t('Carlo de niño'), lang + ': photo captions');
+      check(d.querySelector('#photoPrev').getAttribute('aria-label') === t('Imagen anterior'), lang + ': photo controls');
+      check(d.querySelector('#photoDots button').getAttribute('aria-label') === t('Ver imagen {n}: {caption}', { n: 1, caption: t('Carlo de niño') }), lang + ': generated labels');
+      check(d.querySelector('#photoPlay').getAttribute('aria-pressed') === paused, lang + ': playback state preserved');
+      check(d.querySelector('.qa').classList.contains('open'), lang + ': accordion remains open');
+      check(d.querySelectorAll('iframe').length === 4, lang + ': videos preserved');
+      check(d.querySelectorAll('.photo-slide').length === 13, lang + ': photos preserved');
+      check(d.documentElement.scrollWidth <= w.innerWidth + 1, lang + ': mobile overflow ' + d.documentElement.scrollWidth + '/' + w.innerWidth + ' ' + [...d.querySelectorAll('body *')].filter(el => !el.closest('.hero,.marquee,.photo-track') && el.getBoundingClientRect().right > w.innerWidth + 2 && el.getBoundingClientRect().width > 0).slice(0, 20).map(el => (el.className || el.id || el.tagName) + ':' + Math.round(el.getBoundingClientRect().right)).join(','));
+      check(w.localStorage.getItem('acutis-language') === lang, lang + ': selection saved');
+      check(d.querySelector(`[data-language="${lang}"]`).getAttribute('aria-pressed') === 'true', lang + ': current flag');
+      messages.push('PASS ' + lang);
+    }
+    w.siteI18n.setLanguage('invalid');
+    check(d.documentElement.lang === 'es', 'Invalid language falls back to Spanish');
+    w.siteI18n.setLanguage('ko');
+    frame.src = '../index.html';
+    frame.addEventListener('load', async () => {
+      try {
+        check(frame.contentDocument.documentElement.lang === 'ko', 'Saved language restored');
+        frame.width = '1440';
+        await wait(100);
+        check(frame.contentDocument.documentElement.scrollWidth <= frame.contentWindow.innerWidth + 1, 'Desktop has no horizontal overflow');
+        results.textContent = messages.join('\n') + '\nPASS persistence, fallback, desktop\nALL CHECKS PASSED';
+      } catch (error) { results.textContent = 'FAIL ' + error.message; }
+    }, { once: true });
+  } catch (error) { results.textContent = 'FAIL ' + error.message; }
+}, { once: true });
+</script></body></html>
